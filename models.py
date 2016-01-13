@@ -70,6 +70,11 @@ class ConferenceForm(messages.Message):
     organizerDisplayName = messages.StringField(12)
 
 
+class ConferenceForms(messages.Message):
+    """ConferenceForms -- multiple Conference outbound form message"""
+    items = messages.MessageField(ConferenceForm, 1, repeated=True)
+
+
 class Session(ndb.Model):
     """Session -- Session object"""
     _use_memcache = True
@@ -97,6 +102,11 @@ class SessionForm(messages.Message):
     startTime       = messages.IntegerField(9)
 
 
+class SessionForms(messages.Message):
+    """SessionForms -- multiple Session outbound form message"""
+    items = messages.MessageField(SessionForm, 1, repeated=True)
+
+
 class TeeShirtSize(messages.Enum):
     """TeeShirtSize -- t-shirt size enumeration value"""
     NOT_SPECIFIED = 1
@@ -114,11 +124,6 @@ class TeeShirtSize(messages.Enum):
     XXL_W = 13
     XXXL_M = 14
     XXXL_W = 15
-
-
-class ConferenceForms(messages.Message):
-    """ConferenceForms -- multiple Conference outbound form message"""
-    items = messages.MessageField(ConferenceForm, 1, repeated=True)
 
 
 class ConferenceQueryForm(messages.Message):
