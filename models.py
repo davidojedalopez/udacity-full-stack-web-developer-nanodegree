@@ -81,7 +81,7 @@ class SessionForm(messages.Message):
     websafeKey      = messages.StringField(6)
     typeOfSession   = messages.StringField(7)
     date            = messages.StringField(8)
-    startTime       = messages.IntegerField(9)
+    startTime       = messages.StringField(9)
 
 
 class SessionForms(messages.Message):
