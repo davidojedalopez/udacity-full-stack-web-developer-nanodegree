@@ -107,6 +107,12 @@ class SessionForms(messages.Message):
     items = messages.MessageField(SessionForm, 1, repeated=True)
 
 
+class SpeakerForm(messages.Message):
+    """SpeakerForm -- Speaker outbound form message"""
+    speaker         = messages.StringField(1)
+    sessionNames    = messages.StringField(2, repeated=True)
+    
+
 class TeeShirtSize(messages.Enum):
     """TeeShirtSize -- t-shirt size enumeration value"""
     NOT_SPECIFIED = 1
