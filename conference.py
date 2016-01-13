@@ -251,6 +251,51 @@ class ConferenceApi(remote.Service):
 
         return request
 
+    @ndb.transactional()
+    def _updateConferenceObject(self, request):
+        user = endpoints.get_current_user()
+        if not user:
+            raise endpoints.UnauthorizedException('Authorization required')
+        user_id = getUserId(user)
+
+        # copy ConferenceForm/ProtoRPC Message into dict
+        data = {field.name: getattr(request, field.name) for field in request.all_fields()}
+
+        # update existing conference
+        conf = ndb.Key(urlsafe=request.websafeConferenceKey).get()
+        # check that conference exists
+        if not conf:
+            raise endpoints.NotFoundException(
+                'No conference found with key: %s' % request.websafeConferenceKey)
+
+        # check that user is owner
+        if user_id != conf.organizerUserId:
+            raise endpoints.ForbiddenException(
+                'Only the owner can update the conference.')
+
+        # Not getting all the fields, so don't create a new object; just
+        # copy relevant fields from ConferenceForm to Conference object
+        for field in request.all_fields():
+            data = getattr(request, field.name)
+            # only copy fields where we get data
+            if data not in (None, []):
+                # special handling for dates (convert string to Date)
+                if field.name in ('startDate', 'endDate'):
+                    data = datetime.strptime(data, "%Y-%m-%d").date()
+                    if field.name == 'startDate':
+                        conf.month = data.month
+                # write to Conference object
+                setattr(conf, field.name, data)
+        conf.put()
+        prof = ndb.Key(Profile, user_id).get()
+        return self._copyConferenceToForm(conf, getattr(prof, 'displayName'))
+
+    @endpoints.method(CONF_POST_REQUEST, ConferenceForm,
+            path='conference/{websafeConferenceKey}',
+            http_method='PUT', name='updateConference')
+    def updateConference(self, request):
+        """Update conference w/provided fields & return w/updated info."""
+        return self._updateConferenceObject(request)
 
     @endpoints.method(ConferenceForm, ConferenceForm,
         path='conference',
