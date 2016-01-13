@@ -33,6 +33,7 @@ from models import ConferenceForm
 from models import ConferenceForms
 from models import Session
 from models import SessionForm
+from models import SessionForms
 from models import ConferenceQueryForm
 from models import ConferenceQueryForms
 from models import BooleanMessage
@@ -87,6 +88,11 @@ SESSION_GET_REQUEST = endpoints.ResourceContainer(
 SESSION_POST_REQUEST = endpoints.ResourceContainer(
     SessionForm,
     websafeConferenceKey=messages.StringField(1, required=True),
+)
+
+WISHLIST_POST_REQUEST = endpoints.ResourceContainer(
+    message_types.VoidMessage,
+    websafeSessionKey=messages.StringField(1, required=True),
 )
 
 EMAIL_SCOPE = endpoints.EMAIL_SCOPE
@@ -646,6 +652,86 @@ class ConferenceApi(remote.Service):
                 logging.error('Memcache set failed.')        
 
         return request
+
+    def _copySessionToForm(self, session):
+        """Copy relevant fields from Session to SessionForm"""
+        session_form = SessionForm()
+        for field in session_form.all_fields():
+            if hasattr(session, field.name):
+                if field.name in ['startTime', 'date']:
+                    setattr(session_form, field.name, str(getattr(session, field.name)))
+                else:
+                    setattr(session_form, field.name, getattr(session, field.name))
+            elif field.name == 'websafeKey':
+                setattr(session_form, field.name, session.key.urlsafe())
+        session_form.check_initialized()
+        return session_form
+
+    @endpoints.method(WISHLIST_POST_REQUEST, SessionForm,
+        http_method='POST',
+        name='addSessionToWishList')
+    def addSessionToWishList(self, request):
+        """Saves a session to a user's wishlist"""
+        user = endpoints.get_current_user()
+        if not user:
+            raise UnauthorizedException('Authorization required')
+
+        # Check that the session exists
+        session = ndb.Key(urlsafe=request.websafeSessionKey).get()
+        if not session:
+            raise endpoints.NotFoundException(
+                'No session found with key %s' % request.websafeSessionKey)
+
+        # Get Profile
+        profile = self._getProfileFromUser()
+
+        # Check if session is already in wishlist
+        if session.key in profile.sessionsToAttend:
+            raise endpoints.BadRequestException(
+                'Session %s is already saved to wishlist' % request.websafeSessionKey)
+
+        # Append to user's profile wishlist
+        profile.sessionsToAttend.append(session.key)
+        profile.put()
+
+        return self._copySessionToForm(session)
+
+    @endpoints.method(message_types.VoidMessage, SessionForms,
+        http_method='POST',
+        name='getSessionsInWishlist')
+    def getSessionsInWishlist(self, request):
+        """Returns a user's wishlist of sessions"""
+        user = endpoints.get_current_user()
+        if not user:
+            raise UnauthorizedException('Authorization required')
+
+        profile = self._getProfileFromUser()
+
+        sessions_keys = profile.sessionsToAttend
+        sessions = ndb.get_multi(sessions_keys)
+
+        return SessionForms(
+            items=[self._copySessionToForm(session) for session in sessions])
+
+    @endpoints.method(message_types.VoidMessage, SessionForms,
+        http_method='POST',
+        name='deleteSessionInWishlist')
+    def deleteSessionInWishlist(self, request):
+        user = endpoints.get_current_user()
+        if not user:
+            raise endpoints.UnauthorizedException('Authorization required')
+
+        profile = self._getProfileFromUser()
+
+        # Check if session is already in wishlist
+        if session.key in profile.sessionsToAttend:
+            raise endpoints.BadRequestException(
+                'Session %s is not in the wishlist' % request.websafeSessionKey)
+
+        profile.sessionsToAttend.remove(session.key)
+        profile.put()
+
+        return self._copySessionToForm(session)
 
     @endpoints.method(SessionForm, SessionForm,
         path='sessions',
