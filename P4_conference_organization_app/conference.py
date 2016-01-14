@@ -34,6 +34,7 @@ from models import ConferenceForms
 from models import Session
 from models import SessionForm
 from models import SessionForms
+from models import SpeakerForm
 from models import ConferenceQueryForm
 from models import ConferenceQueryForms
 from models import BooleanMessage
@@ -390,6 +391,19 @@ class ConferenceApi(remote.Service):
             for conf in conferences]
         )
 
+    # @endpoints.method(CONF_GET_REQUEST, ConferenceForm,
+    #     path='conferences/by_month/{month}',
+    #     http_method='GET',
+    #     name='getConferenceByMonth')
+    # def getConferenceByMonth(self, request):
+    #     """Given a month, return all conferences taking place on that month"""
+    #     # Copy ConferenceForm/ProtoRPC Message into dict
+    #     conferences = self._getQuery(request)
+
+    #     return ConferenceForms(
+    #         items=[self._copyConferenceToForm(conference) for conference in conferences]
+    #         )
+
     @endpoints.method(message_types.VoidMessage, ConferenceForms,
         path='getConferencesCreated',
         http_method='POST', name='getConferencesCreated')
@@ -670,8 +684,7 @@ class ConferenceApi(remote.Service):
 
         # Convert dates from strings to Date objects; set month based on start_date
         if data['date']:
-            data['date'] = datetime.strptime(data['date'][:10], "%Y-%m-%d").date()
-            data['month'] = data['date'].month
+            data['date'] = datetime.strptime(data['date'][:10], "%Y-%m-%d").date()            
         
         # Convert time from strings to Time object (date-independent)
         if data['startTime']:
@@ -811,6 +824,39 @@ class ConferenceApi(remote.Service):
         return SessionForms(
             items=[self._copySessionToForm(session) for session in sessions]
         )
+
+    @endpoints.method(message_types.VoidMessage, SpeakerForm,
+        http_method='GET',
+        name='getFeaturedSpeakerSessions')
+    def getFeaturedSpeakerSessions(self, request):
+        """Returns the sessions of the given speaker"""
+        # Try to get data from memcache
+        data = memcache.get('featured_speaker')
+        sessions = []
+        sessionNames = []
+        speaker = None
+
+        if data and data.has_key('speaker') and data.has_key('sessionNames'):
+            speaker = data['speaker']
+            sessionNames = data['sessionNames']
+
+        # If data is not on memcache, get speaker from upcoming session
+        else:
+            nextSession = Session.query(Session.date >= datetime.now()).order(Session.date, Session.startTime).get()
+            if nextSession:
+                speaker = nextSession.speaker
+                sessions = Session.query(Session.speaker == speaker)
+                sessionNames = [session.name for session in sessions]
+
+        # Fill speaker form
+        speaker_form = SpeakerForm()
+        for field in speaker_form.all_fields():
+            if field.name ==  'sessionNames':
+                setattr(speaker_form, field.name, sessionNames)
+            elif field.name == 'speaker':
+                setattr(speaker_form, field.name, speaker)
+        speaker_form.check_initialized()
+        return speaker_form
 
 # registers API
 api = endpoints.api_server([ConferenceApi]) 
