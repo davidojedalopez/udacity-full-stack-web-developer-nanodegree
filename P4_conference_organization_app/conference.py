@@ -14,6 +14,7 @@ __author__ = 'wesc+api@google.com (Wesley Chun)'
 
 
 from datetime import datetime
+from datetime import time
 
 import endpoints
 from protorpc import messages
@@ -873,6 +874,35 @@ class ConferenceApi(remote.Service):
                 setattr(speaker_form, field.name, speaker)
         speaker_form.check_initialized()
         return speaker_form
+
+    @endpoints.method(message_types.VoidMessage, SessionForms,
+        http_method='GET',
+        name='getEarlyNonWorkshopSessions')
+    def getEarlyNonWorkshopSessions(self, request):
+        """Returns all non-workshop sessions taking place before 7pm"""
+
+        sessions = Session.query(ndb.AND(
+            Session.startTime != None,            
+            Session.startTime <= time(hour=19)
+            ))
+
+        if not sessions:
+            raise endpoints.NotFoundException(
+                'There are no sessions matching this criteria')
+
+        sessions_filtered = []
+        for session in sessions:
+            if not session.typeOfSession:
+                pass
+            else:
+                if 'workshop' in session.typeOfSession.lower():
+                    continue
+                else:
+                    sessions_filtered.append(session)
+
+        return SessionForms(
+            items=[self._copySessionToForm(session) for session in sessions_filtered]
+        )
 
 # registers API
 api = endpoints.api_server([ConferenceApi]) 
