@@ -106,6 +106,7 @@ SPEAKER_GET_REQUEST = endpoints.ResourceContainer(
 EMAIL_SCOPE = endpoints.EMAIL_SCOPE
 API_EXPLORER_CLIENT_ID = endpoints.API_EXPLORER_CLIENT_ID
 MEMCACHE_ANNOUNCEMENTS_KEY = "Last chance to attend!"
+MEMCACHE_FEATURED_SPEAKER_KEY = "featured speaker"
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -724,11 +725,12 @@ class ConferenceApi(remote.Service):
         sessions = Session.query(Session.speaker == data['speaker'],
             ancestor=parent_key)
         if len(list(sessions)) > 1:
-            cache_data = {}
-            cache_data['speaker'] = data['speaker']
-            cache_data['sessionNames'] = [session.name for session in sessions]
-            if not memcache.set('featured_speaker', cache_data):
-                logging.error('Memcache set failed.')        
+            taskqueue.add(
+                params={'speaker': data['speaker'],
+                'sessionNames': [session.name for session in sessions]
+                },
+                url='/tasks/add_featured_speaker_to_memcache'
+            )
 
         return request
 
@@ -844,9 +846,9 @@ class ConferenceApi(remote.Service):
 
     @endpoints.method(message_types.VoidMessage, SpeakerForm,
         http_method='GET',
-        name='getFeaturedSpeakerSessions')
-    def getFeaturedSpeakerSessions(self, request):
-        """Returns the sessions of the given speaker"""
+        name='getFeaturedSpeaker')
+    def getFeaturedSpeaker(self, request):
+        """Returns the sessions of the featured speaker"""
         # Try to get data from memcache
         data = memcache.get('featured_speaker')
         sessions = []
