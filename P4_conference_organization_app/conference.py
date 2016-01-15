@@ -850,7 +850,7 @@ class ConferenceApi(remote.Service):
     def getFeaturedSpeaker(self, request):
         """Returns the sessions of the featured speaker"""
         # Try to get data from memcache
-        data = memcache.get('featured_speaker')
+        data = memcache.get(MEMCACHE_FEATURED_SPEAKER_KEY)
         sessions = []
         sessionNames = []
         speaker = None
