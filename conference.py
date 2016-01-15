@@ -73,6 +73,7 @@ FIELDS = {
 CONF_GET_REQUEST = endpoints.ResourceContainer(
     message_types.VoidMessage,
     websafeConferenceKey=messages.StringField(1),
+    month=messages.IntegerField(2)
 )
 
 CONF_POST_REQUEST = endpoints.ResourceContainer(
@@ -391,18 +392,33 @@ class ConferenceApi(remote.Service):
             for conf in conferences]
         )
 
-    # @endpoints.method(CONF_GET_REQUEST, ConferenceForm,
-    #     path='conferences/by_month/{month}',
-    #     http_method='GET',
-    #     name='getConferenceByMonth')
-    # def getConferenceByMonth(self, request):
-    #     """Given a month, return all conferences taking place on that month"""
-    #     # Copy ConferenceForm/ProtoRPC Message into dict
-    #     conferences = self._getQuery(request)
+    @endpoints.method(message_types.VoidMessage, SessionForms,
+        http_method='GET',
+        name='getTimeUndefinedSessions')
+    def getTimeUndefinedSessions(self, request):
+        """Returns sessions missing time information"""
 
-    #     return ConferenceForms(
-    #         items=[self._copyConferenceToForm(conference) for conference in conferences]
-    #         )
+        sessions = Session.query(ndb.OR(
+            Session.duration == None,
+            Session.startTime == None
+            ))
+        return SessionForms(
+            items=[self._copySessionToForm(session) for session in sessions]
+        )
+
+    @endpoints.method(message_types.VoidMessage, ConferenceForms,
+        http_method='GET',
+        name='getConferenceByCurrentMonth')
+    def getConferenceByCurrentMonth(self, request):
+        """Return all the conferences on the current month"""
+
+        current_month = datetime.now().month
+
+        conferences = Conference.query(Conference.month == current_month)
+
+        return ConferenceForms(
+            items=[self._copyConferenceToForm(conference, "") for conference in conferences]
+        )
 
     @endpoints.method(message_types.VoidMessage, ConferenceForms,
         path='getConferencesCreated',
