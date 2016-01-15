@@ -51,7 +51,7 @@ class setFeaturedSpeakerHandler(webapp2.RequestHandler):
         cache_data['sessionNames'] = self.request.get('sessionNames')
 
         if cache_data:
-            memcache.set(MEMCACHE_FEATURED_SPEAKER_KEY. cache_data)
+            memcache.set(MEMCACHE_FEATURED_SPEAKER_KEY, cache_data)
 
 app = webapp2.WSGIApplication([
     ('/crons/set_announcement', SetAnnouncementHandler),
