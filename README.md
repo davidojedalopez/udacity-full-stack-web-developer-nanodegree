@@ -14,4 +14,5 @@
 
 [1]: https://github.com/davidojedalopez/movie-trailer-website
 [2]: https://github.com/davidojedalopez/tournament-database
-[3]: https://github.com/davidojedalopez/games_characters_catalog/blob/master/README.md
+[3]: https://github.com/davidojedalopez/games_characters_catalog
+[4]: https://github.com/davidojedalopez/conference-organization-app
