@@ -6,9 +6,12 @@
 
 ##### The projects are:
 
-- **P1: Movie Trailer Website**
-- **P2: Tournament Results**
-- **P3: Item Catalog**
-- **P4: Conference Organization App**
-- **P5: Linux Server Configuration**
+- [**P1: Movie Trailer Website**][1]
+- [**P2: Tournament Results**][2]
+- [**P3: Item Catalog**][3]
+- [**P4: Conference Organization App**][4]
+- [**P5: Linux Server Configuration**][5]
+
+[1]: https://github.com/davidojedalopez/movie-trailer-website
+[2]: https://github.com/davidojedalopez/tournament-database
 
