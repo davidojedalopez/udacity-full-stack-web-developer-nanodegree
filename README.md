@@ -2,7 +2,7 @@
 
 # Udacity Full Stack Web Developer Nanodegree Projects
 
-#### This repo holds the projects developed during the Udacity's Full-Stack Web Development Nanodegree.
+#### This repo holds the links to projects developed during the Udacity's Full-Stack Web Development Nanodegree.
 
 ##### The projects are:
 
