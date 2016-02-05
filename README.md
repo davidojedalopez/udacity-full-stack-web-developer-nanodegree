@@ -10,7 +10,7 @@
 - [**P2: Tournament Results**][2]
 - [**P3: Item Catalog**][3]
 - [**P4: Conference Organization App**][4]
-- [**P5: Linux Server Configuration**][5]
+- **P5: Linux Server Configuration**
 
 [1]: https://github.com/davidojedalopez/movie-trailer-website
 [2]: https://github.com/davidojedalopez/tournament-database
